@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "392910674178",
+    "project_id": "memm-916bc",
+    "storage_bucket": "memm-916bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:392910674178:android:39a8cc6fb97f24d5cd4a1b",
+        "android_client_info": {
+          "package_name": "com.example.mem_pro_final"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsAUS_RK0x3ynd9Oh0U1pnvV_He3tqcoc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
