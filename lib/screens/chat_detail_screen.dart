@@ -9,8 +9,8 @@ import 'package:provider/provider.dart';
 import '../controllers/chat_controller.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
-
 import 'chat_user_profile.dart';
+
 class ChatDetailScreen extends StatelessWidget {
   final Chat chat;
 
@@ -44,6 +44,39 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  _ChatBackground _resolveBackground(String? key) {
+    switch (key) {
+      case 'blue':
+        return const _ChatBackground(
+          key: 'blue',
+          name: 'أزرق',
+          colors: [
+            Color(0xFF020617),
+            Color(0xFF0F172A),
+          ],
+        );
+      case 'purple':
+        return const _ChatBackground(
+          key: 'purple',
+          name: 'بنفسجي',
+          colors: [
+            Color(0xFF1E293B),
+            Color(0xFF020617),
+          ],
+        );
+      case 'default':
+      default:
+        return const _ChatBackground(
+          key: 'default',
+          name: 'افتراضي',
+          colors: [
+            Color(0xFF050608),
+            Color(0xFF151515),
+          ],
+        );
+    }
   }
 
   @override
@@ -100,122 +133,101 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   //────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context, ChatController controller) {
-  final chat = controller.chat;
-  final title = (chat.title.isNotEmpty ? chat.title : 'محادثة');
+    final chat = controller.chat;
+    final title = (chat.title.isNotEmpty ? chat.title : 'محادثة');
 
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-    child: Row(
-      children: [
-        // زر رجوع
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(
-            CupertinoIcons.back,
-            color: Colors.white,
-            size: 22,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+      child: Row(
+        children: [
+          // زر رجوع
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Icon(
+              CupertinoIcons.back,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
+          const SizedBox(width: 6),
 
-        // 👈 هنا نخلي الصورة + الاسم كلهم قابلين للضغط
-        GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              CupertinoPageRoute(
-                builder: (_) => ChatUserProfileScreen(
-                  chatId: chat.id,
-                  chatTitle: title,
-                ),
-              ),
-            );
-          },
-          child: Row(
-            children: [
-              // الأڤاتار
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.white.withOpacity(0.15),
-                child: Text(
-                  title.trim().isNotEmpty
-                      ? title.trim()[0].toUpperCase()
-                      : '؟',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+          // الصورة + الاسم (كله قابل للضغط لفتح بروفايل الشخص)
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                CupertinoPageRoute(
+                  builder: (_) => ChatUserProfileScreen(
+                    chatId: chat.id,
+                    chatTitle: title,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              // الاسم + حالة بسيطة
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              );
+            },
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.white.withOpacity(0.15),
+                  child: Text(
+                    title.trim().isNotEmpty
+                        ? title.trim()[0].toUpperCase()
+                        : '؟',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'متصل الآن', // تقدر تربطها لاحقاً بحالة حقيقية
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      // الاسم
+                      '',
+                      // سيتم استبداله أدناه في Builder
                     ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // حتى نعرض النص الصحيح بدلاً من النص الفارغ
+          // نستخدم Builder صغير حول النصوص
+          Expanded(
+            child: Builder(
+              builder: (_) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'متصل الآن',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                );
+              },
+            ),
           ),
-        ),
 
-        const Spacer(),
-
-        // زر المزيد (...)
-        GestureDetector(
-          onTap: () => _openTopMenu(context, controller),
-          child: const Icon(
-            CupertinoIcons.ellipsis,
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-          const SizedBox(width: 8),
-          // الاسم + سطر الحالة من بعد (الآن فقط الاسم)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'متصل الآن', // لاحقاً تربطها بحالة حقيقية لو تحب
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
           // زر المزيد (...)
           GestureDetector(
             onTap: () => _openTopMenu(context, controller),
@@ -271,7 +283,9 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   }
 
   void _openBackgroundPicker(
-      BuildContext context, ChatController controller) {
+    BuildContext context,
+    ChatController controller,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -279,26 +293,26 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
         final currentKey = controller.backgroundKey ?? 'default';
 
         final presets = <_ChatBackground>[
-          _ChatBackground(
+          const _ChatBackground(
             key: 'default',
             name: 'افتراضي',
-            colors: const [
+            colors: [
               Color(0xFF050608),
               Color(0xFF151515),
             ],
           ),
-          _ChatBackground(
+          const _ChatBackground(
             key: 'blue',
             name: 'أزرق',
-            colors: const [
+            colors: [
               Color(0xFF020617),
               Color(0xFF0F172A),
             ],
           ),
-          _ChatBackground(
+          const _ChatBackground(
             key: 'purple',
             name: 'بنفسجي',
-            colors: const [
+            colors: [
               Color(0xFF1E293B),
               Color(0xFF020617),
             ],
@@ -323,8 +337,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 height: 80,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemBuilder: (_, i) {
                     final bg = presets[i];
                     final selected = bg.key == currentKey;
@@ -338,17 +351,15 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                       child: Container(
                         width: 80,
                         decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(18),
                           gradient: LinearGradient(
                             colors: bg.colors,
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           border: Border.all(
-                            color: selected
-                                ? Colors.white
-                                : Colors.white24,
+                            color:
+                                selected ? Colors.white : Colors.white24,
                             width: selected ? 2 : 1,
                           ),
                         ),
@@ -465,7 +476,9 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                   icon: CupertinoIcons.doc_on_doc,
                   label: 'نسخ',
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: msg.text));
+                    Clipboard.setData(
+                      ClipboardData(text: msg.text),
+                    );
                     Navigator.pop(ctx);
                   },
                 ),
@@ -563,9 +576,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                replied.text.isNotEmpty
-                    ? replied.text
-                    : 'رسالة',
+                replied.text.isNotEmpty ? replied.text : 'رسالة',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -661,58 +672,3 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   //────────────────────────────────────────────
   // Input bar – زر + و المايك فقط + شريط زجاجي
   //────────────────────────────────────────────
-
-  Widget _buildInputBar(ChatController controller) {
-    final isSending = controller.isSending;
-    final canSend =
-        _inputController.text.trim().isNotEmpty && !isSending;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-      child: Row(
-        children: [
-          // زر +
-          GestureDetector(
-            onTap: () => _openPlusMenu(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.7),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.18),
-                  width: 1,
-                ),
-              ),
-              child: const Icon(
-                CupertinoIcons.add,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // الشريط الزجاجي + المايك / الإرسال
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.55),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.14),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _inputController,
-                          onChanged: (_) => setState(() {}),
-                          maxLines: null,
-          
