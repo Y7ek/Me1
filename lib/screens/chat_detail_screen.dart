@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../controllers/chat_controller.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
+
 import 'chat_user_profile.dart';
 
 class ChatDetailScreen extends StatelessWidget {
@@ -36,7 +37,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // للإزاحة عند السحب (reply)
+  // للإزاحة عند السحب (للرد)
   final Map<String, double> _swipeOffsets = {};
 
   @override
@@ -44,39 +45,6 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  _ChatBackground _resolveBackground(String? key) {
-    switch (key) {
-      case 'blue':
-        return const _ChatBackground(
-          key: 'blue',
-          name: 'أزرق',
-          colors: [
-            Color(0xFF020617),
-            Color(0xFF0F172A),
-          ],
-        );
-      case 'purple':
-        return const _ChatBackground(
-          key: 'purple',
-          name: 'بنفسجي',
-          colors: [
-            Color(0xFF1E293B),
-            Color(0xFF020617),
-          ],
-        );
-      case 'default':
-      default:
-        return const _ChatBackground(
-          key: 'default',
-          name: 'افتراضي',
-          colors: [
-            Color(0xFF050608),
-            Color(0xFF151515),
-          ],
-        );
-    }
   }
 
   @override
@@ -134,7 +102,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
 
   Widget _buildHeader(BuildContext context, ChatController controller) {
     final chat = controller.chat;
-    final title = (chat.title.isNotEmpty ? chat.title : 'محادثة');
+    final title = chat.title.isNotEmpty ? chat.title : 'محادثة';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
@@ -151,7 +119,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
           ),
           const SizedBox(width: 6),
 
-          // الصورة + الاسم (كله قابل للضغط لفتح بروفايل الشخص)
+          // الصورة + الاسم → تفتح صفحة البروفايل
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -169,9 +137,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                   radius: 18,
                   backgroundColor: Colors.white.withOpacity(0.15),
                   child: Text(
-                    title.trim().isNotEmpty
-                        ? title.trim()[0].toUpperCase()
-                        : '؟',
+                    title.trim().isNotEmpty ? title.trim()[0].toUpperCase() : '؟',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -181,11 +147,24 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      // الاسم
-                      '',
-                      // سيتم استبداله أدناه في Builder
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'متصل الآن',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
@@ -193,40 +172,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
             ),
           ),
 
-          // حتى نعرض النص الصحيح بدلاً من النص الفارغ
-          // نستخدم Builder صغير حول النصوص
-          Expanded(
-            child: Builder(
-              builder: (_) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'متصل الآن',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
+          const Spacer(),
 
           // زر المزيد (...)
           GestureDetector(
@@ -241,6 +187,10 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
       ),
     );
   }
+
+  //────────────────────────────────────────────
+  // قائمة الخيارات العلوية
+  //────────────────────────────────────────────
 
   void _openTopMenu(BuildContext context, ChatController controller) {
     showModalBottomSheet(
@@ -257,6 +207,18 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 onTap: () {
                   Navigator.pop(ctx);
                   _openBackgroundPicker(context, controller);
+                },
+              ),
+              _sheetTile(
+                icon: CupertinoIcons.bell_slash_fill,
+                label: 'كتم الإشعارات (لاحقاً)',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('سندعم كتم الإشعارات في خطوة لاحقة.'),
+                    ),
+                  );
                 },
               ),
               _sheetTile(
@@ -338,6 +300,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: presets.length,
                   itemBuilder: (_, i) {
                     final bg = presets[i];
                     final selected = bg.key == currentKey;
@@ -358,8 +321,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                             end: Alignment.bottomRight,
                           ),
                           border: Border.all(
-                            color:
-                                selected ? Colors.white : Colors.white24,
+                            color: selected ? Colors.white : Colors.white24,
                             width: selected ? 2 : 1,
                           ),
                         ),
@@ -375,9 +337,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                       ),
                     );
                   },
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(width: 10),
-                  itemCount: presets.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
                 ),
               ),
               const SizedBox(height: 12),
@@ -410,8 +370,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding:
-          const EdgeInsets.only(bottom: 8, left: 8, right: 8, top: 4),
+      padding: const EdgeInsets.only(bottom: 8, left: 8, right: 8, top: 4),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final msg = messages[index];
@@ -429,8 +388,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
       onHorizontalDragUpdate: (details) {
         setState(() {
           final current = _swipeOffsets[msg.id] ?? 0.0;
-          final updated =
-              (current + details.delta.dx).clamp(-40.0, 40.0);
+          final updated = (current + details.delta.dx).clamp(-40.0, 40.0);
           _swipeOffsets[msg.id] = updated;
         });
       },
@@ -476,9 +434,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                   icon: CupertinoIcons.doc_on_doc,
                   label: 'نسخ',
                   onTap: () {
-                    Clipboard.setData(
-                      ClipboardData(text: msg.text),
-                    );
+                    Clipboard.setData(ClipboardData(text: msg.text));
                     Navigator.pop(ctx);
                   },
                 ),
@@ -489,9 +445,8 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        'ميزة إعادة التوجيه سيتم إضافتها لاحقاً.',
-                      ),
+                      content:
+                          Text('ميزة إعادة التوجيه سيتم إضافتها لاحقاً.'),
                     ),
                   );
                 },
@@ -515,8 +470,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
 
   Widget _buildBubble(ChatController controller, Message msg) {
     final isMe = msg.senderId == controller.currentUid;
-    final alignment =
-        isMe ? Alignment.centerLeft : Alignment.centerRight; // RTL
+    final alignment = isMe ? Alignment.centerLeft : Alignment.centerRight; // RTL
 
     final bubbleColor = msg.isDeleted
         ? Colors.white.withOpacity(0.05)
@@ -622,14 +576,13 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   }
 
   //────────────────────────────────────────────
-  // Reply preview (شريط فوق حقل الكتابة)
+  // Reply preview
   //────────────────────────────────────────────
 
   Widget _buildReplyPreview(ChatController controller) {
     final msg = controller.replyToMessage!;
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.35),
         border: Border(
@@ -670,5 +623,294 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   }
 
   //────────────────────────────────────────────
-  // Input bar – زر + و المايك فقط + شريط زجاجي
+  // Input bar – زر + والمايك فقط وشريط زجاجي
   //────────────────────────────────────────────
+
+  Widget _buildInputBar(ChatController controller) {
+    final isSending = controller.isSending;
+    final canSend =
+        _inputController.text.trim().isNotEmpty && !isSending;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+      child: Row(
+        children: [
+          // زر +
+          GestureDetector(
+            onTap: () => _openPlusMenu(context),
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white.withOpacity(0.15),
+              ),
+              child: const Icon(
+                CupertinoIcons.add,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // حقل الكتابة (زجاجي)
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.12),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _inputController,
+                    onChanged: (_) => setState(() {}),
+                    maxLines: null,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      hintText: 'رسالتك...',
+                      hintStyle: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // زر مايك أو إرسال
+          GestureDetector(
+            onTap: canSend
+                ? () async {
+                    final text = _inputController.text.trim();
+                    if (text.isEmpty) return;
+
+                    await controller.sendText(text);
+                    _inputController.clear();
+                    setState(() {});
+                    await Future.delayed(const Duration(milliseconds: 50));
+                    if (_scrollController.hasClients) {
+                      _scrollController.animateTo(
+                        _scrollController.position.maxScrollExtent + 80,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                      );
+                    }
+                  }
+                : null,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: canSend
+                    ? const Color(0xFF0EA5E9)
+                    : Colors.white.withOpacity(0.16),
+              ),
+              child: Icon(
+                canSend ? CupertinoIcons.arrow_up : CupertinoIcons.mic_fill,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openPlusMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return _glassSheet(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _quickAction(
+                icon: CupertinoIcons.photo_on_rectangle,
+                label: 'المعرض',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  // لاحقاً: فتح المعرض
+                },
+              ),
+              _quickAction(
+                icon: CupertinoIcons.camera_fill,
+                label: 'الكاميرا',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  // لاحقاً: فتح الكاميرا
+                },
+              ),
+              _quickAction(
+                icon: CupertinoIcons.paperclip,
+                label: 'ملف',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  // لاحقاً: اختيار ملف
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _quickAction({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white.withOpacity(0.12),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  //────────────────────────────────────────────
+  // Helpers: الشيت الزجاجي + البلاطات
+  //────────────────────────────────────────────
+
+  Widget _glassSheet({required Widget child}) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.78),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetTile({
+    required IconData icon,
+    required String label,
+    bool isDestructive = false,
+    VoidCallback? onTap,
+  }) {
+    final color = isDestructive ? Colors.redAccent : Colors.white;
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: color, size: 20),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetCancel(BuildContext context) {
+    return TextButton(
+      onPressed: () => Navigator.pop(context),
+      child: const Text(
+        'إلغاء',
+        style: TextStyle(
+          color: Colors.white70,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  //────────────────────────────────────────────
+  // Background model + resolver
+  //────────────────────────────────────────────
+
+  _ChatBackground _resolveBackground(String? key) {
+    switch (key) {
+      case 'blue':
+        return const _ChatBackground(
+          key: 'blue',
+          name: 'أزرق',
+          colors: [
+            Color(0xFF020617),
+            Color(0xFF0F172A),
+          ],
+        );
+      case 'purple':
+        return const _ChatBackground(
+          key: 'purple',
+          name: 'بنفسجي',
+          colors: [
+            Color(0xFF1E293B),
+            Color(0xFF020617),
+          ],
+        );
+      case 'default':
+      default:
+        return const _ChatBackground(
+          key: 'default',
+          name: 'افتراضي',
+          colors: [
+            Color(0xFF050608),
+            Color(0xFF151515),
+          ],
+        );
+    }
+  }
+}
+
+class _ChatBackground {
+  final String key;
+  final String name;
+  final List<Color> colors;
+
+  const _ChatBackground({
+    required this.key,
+    required this.name,
+    required this.colors,
+  });
+}
